@@ -15,10 +15,13 @@ class ViewController: UIViewController {
         return tableView
     }()
 
+    var characters = [Character]()
+
     override func viewDidLoad() {
         super.viewDidLoad()
         setupNavigationBar()
         setupViews()
+        getCharacters()
     }
 
     private func setupNavigationBar() {
@@ -33,6 +36,8 @@ class ViewController: UIViewController {
 
         tableView.delegate = self
         tableView.dataSource = self
+        tableView.register(CharacterTableViewCell.self,
+                           forCellReuseIdentifier: CharacterTableViewCell.id)
 
         tableView.snp.makeConstraints { make in
             make.top.equalTo(view.safeAreaLayoutGuide)
@@ -40,21 +45,52 @@ class ViewController: UIViewController {
             make.horizontalEdges.equalToSuperview()
         }
     }
+
+    private func getCharacters() {
+        NetworkManager.shared.getCharacters { [weak self] result in
+            switch result {
+            case .success(let character):
+                self?.characters = character
+                DispatchQueue.main.async {
+                    self?.tableView.reloadData()
+                }
+            case .failure(let error):
+                print("Failed to fetch drinks: \(error.localizedDescription)")
+            }
+        }
+    }
 }
 
 extension ViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        7
+        return characters.count
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        UITableViewCell()
+        guard let cell = tableView.dequeueReusableCell(
+            withIdentifier: CharacterTableViewCell.id,
+            for: indexPath) as? CharacterTableViewCell else {
+            return UITableViewCell()
+        }
+
+        let character = characters[indexPath.row]
+        let image = character.image
+
+        ImageLoader.shared.loadImage(from: image) { loadedImage in
+            DispatchQueue.main.async {
+                if let cell = tableView.cellForRow(at: indexPath) as? CharacterTableViewCell {
+                    cell.configure(with: character, image: loadedImage)
+                }
+            }
+        }
+
+        return cell
     }
 }
 
 extension ViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        150
+        170
     }
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
