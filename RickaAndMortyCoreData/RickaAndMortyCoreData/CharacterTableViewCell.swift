@@ -21,45 +21,56 @@ final class CharacterTableViewCell: UITableViewCell {
         let imageView = UIImageView()
         imageView.contentMode = .scaleAspectFill
         imageView.clipsToBounds = true
-        imageView.layer.cornerRadius = 47
+        imageView.layer.cornerRadius = 35
         return imageView
     }()
 
-    private let characterNameLabel: UILabel = {
+    private let nameLabel: UILabel = {
         let label = UILabel()
-        label.font = UIFont.systemFont(ofSize: 23)
+        label.font = UIFont.systemFont(ofSize: 20)
+        label.adjustsFontSizeToFitWidth = true
+        label.minimumScaleFactor = 0.8
         return label
     }()
 
-    private let characterGenderLabel: UILabel = {
+    private let speciesAndGenderLabel: UILabel = {
         let label = UILabel()
-        label.font = UIFont.systemFont(ofSize: 15)
+        label.font = UIFont.systemFont(ofSize: 12)
         return label
     }()
 
-    private let watchButton: UIButton = {
+    private let watchEpisodesButton: UIButton = {
         let button = UIButton()
-        button.layer.cornerRadius = 16
-        button.backgroundColor = .systemOrange.withAlphaComponent(0.1)
-        button.setTitleColor(UIColor.systemOrange, for: .normal)
-        button.titleLabel?.font = .systemFont(ofSize: 14)
+        button.layer.cornerRadius = 13
+        button.backgroundColor = .orange.withAlphaComponent(0.1)
+        button.setTitleColor(UIColor.orange, for: .normal)
+        button.titleLabel?.font = .systemFont(ofSize: 12)
+        button.titleLabel?.textAlignment = .center
+        button.clipsToBounds = true
         return button
+    }()
+
+    let markerImageView: UIImageView = {
+        let imageView = UIImageView()
+        imageView.contentMode = .scaleAspectFill
+        imageView.clipsToBounds = true
+        return imageView
     }()
 
     private let locationLabel: UILabel = {
         let label = UILabel()
-        label.font = UIFont.systemFont(ofSize: 15)
+        label.font = UIFont.systemFont(ofSize: 12)
         label.textColor = .black.withAlphaComponent(0.7)
+        label.adjustsFontSizeToFitWidth = true
+        label.minimumScaleFactor = 0.8
         return label
     }()
 
-    private let statusLabel: UILabel = {
-        let label = UILabel()
+    private let statusLabel: CustomUILabel = {
+        let label = CustomUILabel()
         label.font = UIFont.systemFont(ofSize: 17)
-        label.layer.cornerRadius = 16
+        label.layer.cornerRadius = 12
         label.clipsToBounds = true
-        label.backgroundColor = .systemGreen.withAlphaComponent(0.1)
-        label.textColor = .systemGreen
         label.textAlignment = .center
         return label
     }()
@@ -81,9 +92,10 @@ final class CharacterTableViewCell: UITableViewCell {
     private func customizeCell() {
         contentView.addSubview(activityIndicator)
         contentView.addSubview(characterImageView)
-        contentView.addSubview(characterNameLabel)
-        contentView.addSubview(characterGenderLabel)
-        contentView.addSubview(watchButton)
+        contentView.addSubview(nameLabel)
+        contentView.addSubview(speciesAndGenderLabel)
+        contentView.addSubview(watchEpisodesButton)
+        contentView.addSubview(markerImageView)
         contentView.addSubview(locationLabel)
         contentView.addSubview(statusLabel)
 
@@ -93,48 +105,104 @@ final class CharacterTableViewCell: UITableViewCell {
 
         characterImageView.snp.makeConstraints { make in
             make.centerY.equalToSuperview()
-            make.leading.equalToSuperview().inset(20)
-            make.height.equalTo(135)
+            make.leading.equalToSuperview().inset(17)
+            make.height.equalTo(100)
             make.width.equalTo(characterImageView.snp.height)
         }
 
-        characterNameLabel.snp.makeConstraints { make in
+        nameLabel.snp.makeConstraints { make in
             make.top.equalTo(characterImageView)
             make.leading.equalTo(characterImageView.snp.trailing).offset(20)
+            make.trailing.equalToSuperview().inset(100)
         }
 
-        characterGenderLabel.snp.makeConstraints { make in
-            make.top.equalTo(characterNameLabel.snp.bottom)
-            make.leading.equalTo(characterNameLabel)
+        speciesAndGenderLabel.snp.makeConstraints { make in
+            make.top.equalTo(nameLabel.snp.bottom).offset(2.5)
+            make.leading.equalTo(nameLabel)
+            make.trailing.equalToSuperview().inset(10)
         }
 
-        watchButton.snp.makeConstraints { make in
-            make.leading.equalTo(characterNameLabel)
-            make.top.equalTo(characterGenderLabel.snp.bottom).offset(20)
-            make.width.equalTo(135)
-            make.height.equalTo(35)
+        watchEpisodesButton.snp.makeConstraints { make in
+            make.leading.equalTo(nameLabel)
+            make.top.equalTo(speciesAndGenderLabel.snp.bottom).offset(8)
+            make.width.equalTo(130)
+            make.height.equalTo(29)
+        }
+
+        markerImageView.snp.makeConstraints { make in
+            make.leading.equalTo(nameLabel)
+            make.bottom.equalTo(characterImageView).inset(2.5)
+            make.height.width.equalTo(11)
         }
 
         locationLabel.snp.makeConstraints { make in
-            make.leading.equalTo(characterNameLabel)
+            make.leading.equalTo(markerImageView.snp.trailing).offset(3.5)
+            make.trailing.equalToSuperview().inset(10)
             make.bottom.equalTo(characterImageView)
         }
 
         statusLabel.snp.makeConstraints { make in
             make.top.equalTo(characterImageView)
             make.trailing.equalToSuperview().inset(10)
-            make.width.equalTo(65)
-            make.height.equalTo(30)
+            make.height.equalTo(25)
         }
+    }
+
+    private func applyBlackAndWhiteFilter(to image: UIImage) -> UIImage? {
+        guard let currentCIImage = CIImage(image: image) else {
+            return nil
+        }
+
+        let filter = CIFilter(name: "CIColorMonochrome")
+        filter?.setValue(currentCIImage, forKey: "inputImage")
+        filter?.setValue(CIColor(red: 0.7, green: 0.7, blue: 0.7), forKey: "inputColor")
+        filter?.setValue(1.0, forKey: "inputIntensity")
+
+        guard let outputImage = filter?.outputImage,
+              let cgImage = CIContext().createCGImage(outputImage, from: outputImage.extent) else {
+            return nil
+        }
+
+        return UIImage(cgImage: cgImage)
     }
 
     func configure(with character: Character, image: UIImage?) {
         activityIndicator.startAnimating()
         characterImageView.image = image
-        characterNameLabel.text = character.name
-        characterGenderLabel.text = "\(character.species), \(character.gender)"
-        watchButton.setTitle("Watch episodes", for: .normal)
+        nameLabel.text = character.name
+        speciesAndGenderLabel.text = "\(character.species), \(character.gender)"
+        watchEpisodesButton.setTitle("▶ Watch episodes", for: .normal)
+        markerImageView.image = UIImage(named: "marker")
         locationLabel.text = character.location.name
         statusLabel.text = character.status
+
+        switch character.status {
+        case "Dead":
+            let filteredImage = self.applyBlackAndWhiteFilter(to: image ?? UIImage())
+            characterImageView.image = filteredImage
+            statusLabel.backgroundColor = .red.withAlphaComponent(0.1)
+            statusLabel.textColor = .systemRed
+        case "unknown":
+            statusLabel.backgroundColor = .gray.withAlphaComponent(0.1)
+            statusLabel.textColor = .systemGray
+        default:
+            statusLabel.backgroundColor = .green.withAlphaComponent(0.2)
+            statusLabel.textColor = UIColor(red: 34/255, green: 139/255, blue: 34/255, alpha: 1)
+        }
+    }
+}
+
+class CustomUILabel: UILabel {
+    var textInsets = UIEdgeInsets(top: 5, left: 9, bottom: 5, right: 9)
+
+    override func drawText(in rect: CGRect) {
+        let paddedRect = rect.inset(by: textInsets)
+        super.drawText(in: paddedRect)
+    }
+
+    override var intrinsicContentSize: CGSize {
+        let size = super.intrinsicContentSize
+        return CGSize(width: size.width + textInsets.left + textInsets.right,
+                       height: size.height + textInsets.top + textInsets.bottom)
     }
 }

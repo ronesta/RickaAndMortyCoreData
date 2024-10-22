@@ -12,6 +12,7 @@ class ViewController: UIViewController {
 
     let tableView: UITableView = {
         let tableView = UITableView(frame: .zero, style: .plain)
+        tableView.separatorStyle = .none
         return tableView
     }()
 
@@ -78,9 +79,10 @@ extension ViewController: UITableViewDataSource {
 
         ImageLoader.shared.loadImage(from: image) { loadedImage in
             DispatchQueue.main.async {
-                if let cell = tableView.cellForRow(at: indexPath) as? CharacterTableViewCell {
-                    cell.configure(with: character, image: loadedImage)
+                guard let cell = tableView.cellForRow(at: indexPath) as? CharacterTableViewCell  else {
+                    return
                 }
+                cell.configure(with: character, image: loadedImage)
             }
         }
 
@@ -90,7 +92,7 @@ extension ViewController: UITableViewDataSource {
 
 extension ViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        170
+        128
     }
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
